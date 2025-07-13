@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"rolerocket/databases/sqlite"
 	"rolerocket/logger"
 	"rolerocket/routes"
 )
@@ -9,11 +10,16 @@ import (
 func main() {
 	router := routes.Routes()
 	logger.Main()
+	sqlite.Main()
 
+	// ? use localhost:xxxx to make it not ask for admin permissions
+	// ? use :8080 for production
+	port := "localhost:8080"
+	logger.Logger.Info("Starting server on port: " + port)
 	server := http.Server{
-		//Addr: ":8080",
-		Addr:    "localhost:8080", // ? use localhost:xxxx to make it not ask for admin permissions
+		Addr:    port,
 		Handler: logger.Middlware(router),
 	}
 	server.ListenAndServe()
+
 }
