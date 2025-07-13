@@ -1,21 +1,117 @@
 package logger
 
 import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
 )
 
+type DBHandler struct {
+	db *sql.DB
+}
+
 type wrappedWriter struct {
 	http.ResponseWriter
 	statusCode int
 }
 
-var Logger *slog.Logger
+var Slog *slog.Logger
 
-func Main() {
-	Logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})).WithGroup("info")
+type MultiHandler struct {
+	handlers []slog.Handler
+}
+
+// region multi handlers
+
+func (h *DBHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return true
+}
+
+func (h *DBHandler) Handle(ctx context.Context, record slog.Record) error {
+	msg := record.Message
+
+	// Convert attributes to a map
+	attrMap := make(map[string]any)
+	record.Attrs(func(attr slog.Attr) bool {
+		attrMap[attr.Key] = attr.Value.Any()
+		return true
+	})
+
+	// Marshal the map to JSON
+	jsonBytes, err := json.Marshal(attrMap)
+	if err != nil {
+		fmt.Println("Error marshaling to JSON:", err)
+		return err
+	}
+
+	fmt.Println(string(jsonBytes)) // Optional: for debugging
+
+	_, err = h.db.Exec("INSERT INTO logs (log, level, info) VALUES ($1, $2, $3)", msg, record.Level.String(), string(jsonBytes))
+	return err
+}
+
+func (h *DBHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return h // Could extend this to store attrs in DB
+}
+
+func (h *DBHandler) WithGroup(name string) slog.Handler {
+	return h
+}
+
+// endregion
+
+// region multi handlers
+
+func (m *MultiHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, h := range m.handlers {
+		if h.Enabled(ctx, level) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *MultiHandler) Handle(ctx context.Context, record slog.Record) error {
+	for _, h := range m.handlers {
+		if err := h.Handle(ctx, record); err != nil {
+			fmt.Println("Handler error:", err)
+		}
+	}
+	return nil
+}
+
+func (m *MultiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	updated := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		updated[i] = h.WithAttrs(attrs)
+	}
+	return &MultiHandler{handlers: updated}
+}
+
+func (m *MultiHandler) WithGroup(name string) slog.Handler {
+	updated := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		updated[i] = h.WithGroup(name)
+	}
+	return &MultiHandler{handlers: updated}
+}
+
+//endregion
+
+func Main(db *sql.DB) {
+	dbHandler := &DBHandler{db: db}
+	stdoutHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
+
+	multi := &MultiHandler{handlers: []slog.Handler{stdoutHandler, dbHandler}}
+	Slog = slog.New(multi)
+
+	Slog.Info("it works!")
+
 }
 
 func (writer wrappedWriter) WriteHeader(statusCode int) {
@@ -33,11 +129,34 @@ func Middlware(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(wrapped, r)
-		Logger.Debug("Http Call",
+
+		Slog.Info("Http Call",
 			slog.String("method", r.Method),
 			slog.String("path", r.URL.Path),
 			slog.Int("durationUs", int(time.Since(start).Microseconds())),
 			slog.Int("statusCode", wrapped.statusCode),
 		)
 	})
+}
+
+// ? 	LogLevels
+// ?	LevelDebug Level = -4
+// ? 	LevelInfo  Level = 0
+// ?	LevelWarn  Level = 4
+// ?	LevelError Level = 8
+
+func Debug(msg string, args ...any) {
+	Slog.Log(context.Background(), -4, msg, args...)
+}
+
+func Info(msg string, args ...any) {
+	Slog.Log(context.Background(), 0, msg, args...)
+}
+
+func Warn(msg string, args ...any) {
+	Slog.Log(context.Background(), 4, msg, args...)
+}
+
+func Error(msg string, args ...any) {
+	Slog.Log(context.Background(), 8, msg, args...)
 }
