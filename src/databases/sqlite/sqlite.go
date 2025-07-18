@@ -19,12 +19,24 @@ func Init() *sql.DB {
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+		logTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+		correlationId TEXT,
 		level TEXT,
         log TEXT,
 		info TEXT
     )`)
 	if err != nil {
-		fmt.Println("Error creating table!", slog.Any("Error", err))
+		fmt.Println("Error creating logs", slog.Any("Error", err))
+		log.Fatal(err)
+	}
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		createTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+        username TEXT,
+		password TEXT
+    )`)
+	if err != nil {
+		fmt.Println("Error creating users", slog.Any("Error", err))
 		log.Fatal(err)
 	}
 

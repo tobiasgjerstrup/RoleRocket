@@ -2,12 +2,14 @@ package routes
 
 import (
 	"net/http"
+	"rolerocket/logger"
 )
 
 func Routes() *http.ServeMux {
 	router := http.NewServeMux()
 
 	router.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
+		logger.Slog.Info("List Users")
 		w.Write([]byte("List users"))
 	})
 	router.HandleFunc("PUT /users/{id}", func(w http.ResponseWriter, r *http.Request) {

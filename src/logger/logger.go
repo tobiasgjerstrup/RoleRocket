@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type DBHandler struct {
@@ -20,6 +22,7 @@ type wrappedWriter struct {
 	statusCode int
 }
 
+var CorrelationId uuid.UUID
 var Slog *slog.Logger
 
 type MultiHandler struct {
@@ -51,7 +54,7 @@ func (h *DBHandler) Handle(ctx context.Context, record slog.Record) error {
 
 	fmt.Println(string(jsonBytes)) // Optional: for debugging
 
-	_, err = h.db.Exec("INSERT INTO logs (log, level, info) VALUES ($1, $2, $3)", msg, record.Level.String(), string(jsonBytes))
+	_, err = h.db.Exec("INSERT INTO logs (log, level, info, correlationId) VALUES ($1, $2, $3, $4)", msg, record.Level.String(), string(jsonBytes), CorrelationId)
 	return err
 }
 
@@ -109,9 +112,6 @@ func Main(db *sql.DB) {
 
 	multi := &MultiHandler{handlers: []slog.Handler{stdoutHandler, dbHandler}}
 	Slog = slog.New(multi)
-
-	Slog.Info("it works!")
-
 }
 
 func (writer wrappedWriter) WriteHeader(statusCode int) {
@@ -122,6 +122,7 @@ func (writer wrappedWriter) WriteHeader(statusCode int) {
 func Middlware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+		CorrelationId = uuid.New()
 
 		wrapped := &wrappedWriter{
 			ResponseWriter: w,
