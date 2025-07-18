@@ -2,7 +2,7 @@ package routes
 
 import (
 	"net/http"
-	"rolerocket/logger"
+	"rolerocket/internal/logger"
 )
 
 func Routes() *http.ServeMux {

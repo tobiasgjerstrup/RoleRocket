@@ -1,5 +1,5 @@
 {
   "watch": ["."],
   "ext": "go",
-  "exec": "cd src && go run main.go"
+  "exec": "go run cmd/server/main.go"
 }

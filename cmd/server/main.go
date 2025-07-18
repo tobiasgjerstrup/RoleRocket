@@ -2,9 +2,9 @@ package main
 
 import (
 	"net/http"
-	"rolerocket/databases/sqlite"
-	"rolerocket/logger"
-	"rolerocket/routes"
+	sqlite "rolerocket/internal/db"
+	"rolerocket/internal/logger"
+	"rolerocket/internal/routes"
 )
 
 func main() {
