@@ -14,7 +14,16 @@ func RunBenchmark(url string, totalRequests int, concurrency int) {
 
 	requestsPerWorker := totalRequests / concurrency
 	results := make(chan time.Duration, totalRequests)
-	var failureCount int64 // atomic counter for failed requests
+	var failureCount int64
+
+	// Reusable HTTP client with keep-alives and timeouts
+	client := &http.Client{
+		Timeout: 2 * time.Second,
+		Transport: &http.Transport{
+			MaxIdleConns:        concurrency,
+			MaxIdleConnsPerHost: concurrency,
+		},
+	}
 
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
@@ -22,7 +31,7 @@ func RunBenchmark(url string, totalRequests int, concurrency int) {
 			defer wg.Done()
 			for j := 0; j < requestsPerWorker; j++ {
 				reqStart := time.Now()
-				resp, err := http.Get(url)
+				resp, err := client.Get(url)
 				if err != nil {
 					atomic.AddInt64(&failureCount, 1)
 				} else {
