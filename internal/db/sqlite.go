@@ -58,7 +58,7 @@ func (db *DB) Migrate() {
 }
 
 func (db *DB) GetUsers(ctx context.Context) ([]string, error) {
-	rows, err := db.Conn.Query("SELECT usernamee FROM users")
+	rows, err := db.Conn.Query("SELECT username FROM users")
 	if err != nil {
 		logger.Error(ctx, "Error returned whilst getting users", slog.Any("error", err))
 		return nil, err
