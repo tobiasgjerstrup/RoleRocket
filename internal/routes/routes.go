@@ -9,7 +9,7 @@ func Routes() *http.ServeMux {
 	router := http.NewServeMux()
 
 	router.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
-		users, err := GetUsers()
+		users, err := GetUsers(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
 			return
@@ -29,7 +29,7 @@ func Routes() *http.ServeMux {
 		w.Write([]byte("Update user with ID: " + id))
 	})
 	router.HandleFunc("POST /users", func(w http.ResponseWriter, r *http.Request) {
-		InsertUser()
+		InsertUser(r.Context())
 		w.Write([]byte("Create user"))
 	})
 	router.HandleFunc("DELETE /users/{id}", func(w http.ResponseWriter, r *http.Request) {

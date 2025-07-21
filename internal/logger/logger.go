@@ -23,12 +23,15 @@ type wrappedWriter struct {
 	statusCode int
 }
 
-var CorrelationId uuid.UUID
 var Slog *slog.Logger
 
 type MultiHandler struct {
 	handlers []slog.Handler
 }
+
+type correlationIDKeyType struct{}
+
+var correlationIDKey = correlationIDKeyType{}
 
 // region multi handlers
 
@@ -57,7 +60,9 @@ func (h *DBHandler) Handle(ctx context.Context, record slog.Record) error {
 		return err
 	}
 
-	_, err = h.db.Exec("INSERT INTO logs (log, level, info, correlationId) VALUES ($1, $2, $3, $4)", msg, record.Level.String(), string(jsonBytes), CorrelationId)
+	cid := ctx.Value(correlationIDKey)
+
+	_, err = h.db.Exec("INSERT INTO logs (log, level, info, correlationId) VALUES ($1, $2, $3, $4)", msg, record.Level.String(), string(jsonBytes), cid)
 	return err
 }
 
@@ -131,7 +136,9 @@ func (writer *wrappedWriter) Write(b []byte) (int, error) {
 func Middlware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		CorrelationId = uuid.New()
+		cid := uuid.New()
+		ctx := context.WithValue(r.Context(), correlationIDKey, cid)
+		r = r.WithContext(ctx)
 
 		wrapped := &wrappedWriter{
 			ResponseWriter: w,
@@ -141,14 +148,14 @@ func Middlware(next http.Handler) http.Handler {
 		next.ServeHTTP(wrapped, r)
 
 		if wrapped.statusCode >= 500 {
-			Slog.Error("Http Call",
+			Error(r.Context(), "Http Call",
 				slog.String("method", r.Method),
 				slog.String("path", r.URL.Path),
 				slog.Int("durationUs", int(time.Since(start).Microseconds())),
 				slog.Int("statusCode", wrapped.statusCode),
 			)
 		} else {
-			Slog.Info("Http Call",
+			Info(r.Context(), "Http Call",
 				slog.String("method", r.Method),
 				slog.String("path", r.URL.Path),
 				slog.Int("durationUs", int(time.Since(start).Microseconds())),
@@ -164,18 +171,18 @@ func Middlware(next http.Handler) http.Handler {
 // ?	LevelWarn  Level = 4
 // ?	LevelError Level = 8
 
-func Debug(msg string, args ...any) {
-	Slog.Log(context.Background(), -4, msg, args...)
+func Debug(ctx context.Context, msg string, args ...any) {
+	Slog.Log(ctx, -4, msg, args...)
 }
 
-func Info(msg string, args ...any) {
-	Slog.Log(context.Background(), 0, msg, args...)
+func Info(ctx context.Context, msg string, args ...any) {
+	Slog.Log(ctx, 0, msg, args...)
 }
 
-func Warn(msg string, args ...any) {
-	Slog.Log(context.Background(), 4, msg, args...)
+func Warn(ctx context.Context, msg string, args ...any) {
+	Slog.Log(ctx, 4, msg, args...)
 }
 
-func Error(msg string, args ...any) {
-	Slog.Log(context.Background(), 8, msg, args...)
+func Error(ctx context.Context, msg string, args ...any) {
+	Slog.Log(ctx, 8, msg, args...)
 }

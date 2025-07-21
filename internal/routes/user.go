@@ -1,13 +1,16 @@
 package routes
 
-import sqlite "rolerocket/internal/db"
+import (
+	"context"
+	sqlite "rolerocket/internal/db"
+)
 
-func GetUsers() ([]string, error) {
-	return sqlite.DBInstance.GetUsers()
+func GetUsers(ctx context.Context) ([]string, error) {
+	return sqlite.DBInstance.GetUsers(ctx)
 }
 
-func InsertUser() {
-	sqlite.DBInstance.InsertUser()
+func InsertUser(ctx context.Context) {
+	sqlite.DBInstance.InsertUser(ctx)
 }
 
 func UpdateUser() {

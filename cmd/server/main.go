@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	sqlite "rolerocket/internal/db"
 	"rolerocket/internal/logger"
@@ -15,7 +16,7 @@ func main() {
 	// ? use localhost:xxxx to make it not ask for admin permissions
 	// ? use :8080 for production
 	port := "localhost:8080"
-	logger.Info("Starting server on port: " + port)
+	logger.Info(context.Background(), "Starting server on port: "+port)
 	server := http.Server{
 		Addr:    port,
 		Handler: logger.Middlware(router),

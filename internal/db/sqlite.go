@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -56,10 +57,10 @@ func (db *DB) Migrate() {
 	}
 }
 
-func (db *DB) GetUsers() ([]string, error) {
-	rows, err := db.Conn.Query("SELECT username FROM users")
+func (db *DB) GetUsers(ctx context.Context) ([]string, error) {
+	rows, err := db.Conn.Query("SELECT usernamee FROM users")
 	if err != nil {
-		logger.Error("Error returned whilst getting users", slog.Any("error", err))
+		logger.Error(ctx, "Error returned whilst getting users", slog.Any("error", err))
 		return nil, err
 	}
 	defer rows.Close()
@@ -68,23 +69,23 @@ func (db *DB) GetUsers() ([]string, error) {
 	for rows.Next() {
 		var username string
 		if err := rows.Scan(&username); err != nil {
-			logger.Error("Error scanning username", slog.Any("error", err))
+			logger.Error(ctx, "Error scanning username", slog.Any("error", err))
 			return nil, err
 		}
 		usernames = append(usernames, username)
 	}
 
 	if err := rows.Err(); err != nil {
-		logger.Error("Rows iteration error", slog.Any("error", err))
+		logger.Error(ctx, "Rows iteration error", slog.Any("error", err))
 		return nil, err
 	}
 
 	return usernames, nil
 }
 
-func (db *DB) InsertUser() {
+func (db *DB) InsertUser(ctx context.Context) {
 	_, err := db.Conn.Exec("INSERT INTO users ('username', 'password') VALUES ('username123', 'pass123')")
 	if err != nil {
-		logger.Warn("Error returned whilst getting users", slog.Any("error", err))
+		logger.Warn(ctx, "Error returned whilst getting users", slog.Any("error", err))
 	}
 }
