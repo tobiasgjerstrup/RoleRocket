@@ -5,10 +5,17 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"rolerocket/internal/logger"
 
 	// ? Is used for opening db file with sqlite. So it looks like this import isn't used but it is.
 	_ "github.com/mattn/go-sqlite3"
 )
+
+type DB struct {
+	Conn *sql.DB
+}
+
+var DBInstance *DB
 
 func Init() *sql.DB {
 	db, err := sql.Open("sqlite3", "./db.sqlite")
@@ -17,7 +24,15 @@ func Init() *sql.DB {
 		log.Fatal(err)
 	}
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS logs (
+	// sqlite lite dies a little if multiple are open at the same time
+	db.SetMaxOpenConns(1)
+	DBInstance = &DB{Conn: db}
+	DBInstance.Migrate()
+	return db
+}
+
+func (db *DB) Migrate() {
+	_, err := db.Conn.Exec(`CREATE TABLE IF NOT EXISTS logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 		logTime DATETIME DEFAULT CURRENT_TIMESTAMP,
 		correlationId TEXT,
@@ -29,7 +44,7 @@ func Init() *sql.DB {
 		fmt.Println("Error creating logs", slog.Any("Error", err))
 		log.Fatal(err)
 	}
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (
+	_, err = db.Conn.Exec(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 		createTime DATETIME DEFAULT CURRENT_TIMESTAMP,
         username TEXT,
@@ -39,6 +54,37 @@ func Init() *sql.DB {
 		fmt.Println("Error creating users", slog.Any("Error", err))
 		log.Fatal(err)
 	}
+}
 
-	return db
+func (db *DB) GetUsers() ([]string, error) {
+	rows, err := db.Conn.Query("SELECT username FROM users")
+	if err != nil {
+		logger.Error("Error returned whilst getting users", slog.Any("error", err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	var usernames []string
+	for rows.Next() {
+		var username string
+		if err := rows.Scan(&username); err != nil {
+			logger.Error("Error scanning username", slog.Any("error", err))
+			return nil, err
+		}
+		usernames = append(usernames, username)
+	}
+
+	if err := rows.Err(); err != nil {
+		logger.Error("Rows iteration error", slog.Any("error", err))
+		return nil, err
+	}
+
+	return usernames, nil
+}
+
+func (db *DB) InsertUser() {
+	_, err := db.Conn.Exec("INSERT INTO users ('username', 'password') VALUES ('username123', 'pass123')")
+	if err != nil {
+		logger.Warn("Error returned whilst getting users", slog.Any("error", err))
+	}
 }

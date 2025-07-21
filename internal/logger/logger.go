@@ -14,7 +14,8 @@ import (
 )
 
 type DBHandler struct {
-	db *sql.DB
+	db       *sql.DB
+	minLevel slog.Level
 }
 
 type wrappedWriter struct {
@@ -32,7 +33,7 @@ type MultiHandler struct {
 // region multi handlers
 
 func (h *DBHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return true
+	return level >= h.minLevel
 }
 
 func (h *DBHandler) Handle(ctx context.Context, record slog.Record) error {
@@ -41,7 +42,11 @@ func (h *DBHandler) Handle(ctx context.Context, record slog.Record) error {
 	// Convert attributes to a map
 	attrMap := make(map[string]any)
 	record.Attrs(func(attr slog.Attr) bool {
-		attrMap[attr.Key] = attr.Value.Any()
+		if attr.Key == "error" {
+			attrMap[attr.Key] = fmt.Sprintf("%v", attr.Value.Any())
+		} else {
+			attrMap[attr.Key] = attr.Value.Any()
+		}
 		return true
 	})
 
@@ -51,8 +56,6 @@ func (h *DBHandler) Handle(ctx context.Context, record slog.Record) error {
 		fmt.Println("Error marshaling to JSON:", err)
 		return err
 	}
-
-	fmt.Println(string(jsonBytes)) // Optional: for debugging
 
 	_, err = h.db.Exec("INSERT INTO logs (log, level, info, correlationId) VALUES ($1, $2, $3, $4)", msg, record.Level.String(), string(jsonBytes), CorrelationId)
 	return err
@@ -81,8 +84,10 @@ func (m *MultiHandler) Enabled(ctx context.Context, level slog.Level) bool {
 
 func (m *MultiHandler) Handle(ctx context.Context, record slog.Record) error {
 	for _, h := range m.handlers {
-		if err := h.Handle(ctx, record); err != nil {
-			fmt.Println("Handler error:", err)
+		if h.Enabled(ctx, record.Level) {
+			if err := h.Handle(ctx, record); err != nil {
+				fmt.Println("Handler error:", err)
+			}
 		}
 	}
 	return nil
@@ -107,16 +112,20 @@ func (m *MultiHandler) WithGroup(name string) slog.Handler {
 //endregion
 
 func Main(db *sql.DB) {
-	dbHandler := &DBHandler{db: db}
-	stdoutHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
+	dbHandler := &DBHandler{db: db, minLevel: slog.LevelInfo}
+	stdoutHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn})
 
 	multi := &MultiHandler{handlers: []slog.Handler{stdoutHandler, dbHandler}}
 	Slog = slog.New(multi)
 }
 
-func (writer wrappedWriter) WriteHeader(statusCode int) {
-	writer.ResponseWriter.WriteHeader(statusCode)
+func (writer *wrappedWriter) WriteHeader(statusCode int) {
 	writer.statusCode = statusCode
+	writer.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (writer *wrappedWriter) Write(b []byte) (int, error) {
+	return writer.ResponseWriter.Write(b)
 }
 
 func Middlware(next http.Handler) http.Handler {
@@ -131,12 +140,21 @@ func Middlware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(wrapped, r)
 
-		Slog.Info("Http Call",
-			slog.String("method", r.Method),
-			slog.String("path", r.URL.Path),
-			slog.Int("durationUs", int(time.Since(start).Microseconds())),
-			slog.Int("statusCode", wrapped.statusCode),
-		)
+		if wrapped.statusCode >= 500 {
+			Slog.Error("Http Call",
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+				slog.Int("durationUs", int(time.Since(start).Microseconds())),
+				slog.Int("statusCode", wrapped.statusCode),
+			)
+		} else {
+			Slog.Info("Http Call",
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+				slog.Int("durationUs", int(time.Since(start).Microseconds())),
+				slog.Int("statusCode", wrapped.statusCode),
+			)
+		}
 	})
 }
 
