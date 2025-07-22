@@ -23,7 +23,7 @@ type UserSearch struct {
 
 func GetUsers(w http.ResponseWriter, r *http.Request) ([]string, error) {
 	userSearch := r.URL.Query().Get("username")
-	return sqlite.DBInstance.GetUsers(r.Context(), &userSearch)
+	return sqlite.DBInstance.GetUsers(r.Context(), userSearch)
 }
 
 func InsertUser(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +48,7 @@ func InsertUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUsers, err := sqlite.DBInstance.GetUsers(r.Context(), &creds.Username)
+	existingUsers, err := sqlite.DBInstance.GetUsers(r.Context(), creds.Username)
 	if err != nil {
 		logger.Error(r.Context(), "Error thrown whilst getting user", slog.Any("error", err))
 		http.Error(w, "Missing username or password in JSON body", http.StatusInternalServerError)

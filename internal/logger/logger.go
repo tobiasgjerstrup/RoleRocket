@@ -117,7 +117,7 @@ func (m *MultiHandler) WithGroup(name string) slog.Handler {
 //endregion
 
 func Main(db *sql.DB) {
-	dbHandler := &DBHandler{db: db, minLevel: slog.LevelWarn}
+	dbHandler := &DBHandler{db: db, minLevel: slog.LevelDebug}
 	stdoutHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn})
 
 	multi := &MultiHandler{handlers: []slog.Handler{stdoutHandler, dbHandler}}

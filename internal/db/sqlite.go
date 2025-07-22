@@ -59,14 +59,14 @@ func (db *DB) Migrate() {
 	}
 }
 
-func (db *DB) GetUsers(ctx context.Context, search *string) ([]string, error) {
+func (db *DB) GetUsers(ctx context.Context, search string) ([]string, error) {
 	var rows *sql.Rows
 	var err error
 
-	if search == nil {
+	if search == "" {
 		rows, err = db.Conn.Query("SELECT username FROM users")
-	} else if strings.Contains(*search, "*") {
-		searchTerm := strings.ReplaceAll(*search, "*", "%")
+	} else if strings.Contains(search, "*") {
+		searchTerm := strings.ReplaceAll(search, "*", "%")
 		rows, err = db.Conn.Query("SELECT username FROM users WHERE username LIKE $1", searchTerm)
 	} else {
 		rows, err = db.Conn.Query("SELECT username FROM users WHERE username = $1", search)
