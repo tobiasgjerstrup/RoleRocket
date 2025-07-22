@@ -7,9 +7,11 @@ import (
 	"log"
 	"log/slog"
 	"rolerocket/internal/logger"
+	"strings"
 
 	// ? Is used for opening db file with sqlite. So it looks like this import isn't used but it is.
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type DB struct {
@@ -57,8 +59,19 @@ func (db *DB) Migrate() {
 	}
 }
 
-func (db *DB) GetUsers(ctx context.Context) ([]string, error) {
-	rows, err := db.Conn.Query("SELECT username FROM users")
+func (db *DB) GetUsers(ctx context.Context, search *string) ([]string, error) {
+	var rows *sql.Rows
+	var err error
+
+	if search == nil {
+		rows, err = db.Conn.Query("SELECT username FROM users")
+	} else if strings.Contains(*search, "*") {
+		searchTerm := strings.ReplaceAll(*search, "*", "%")
+		rows, err = db.Conn.Query("SELECT username FROM users WHERE username LIKE $1", searchTerm)
+	} else {
+		rows, err = db.Conn.Query("SELECT username FROM users WHERE username = $1", search)
+	}
+
 	if err != nil {
 		logger.Error(ctx, "Error returned whilst getting users", slog.Any("error", err))
 		return nil, err
@@ -83,9 +96,29 @@ func (db *DB) GetUsers(ctx context.Context) ([]string, error) {
 	return usernames, nil
 }
 
-func (db *DB) InsertUser(ctx context.Context) {
-	_, err := db.Conn.Exec("INSERT INTO users ('username', 'password') VALUES ('username123', 'pass123')")
+func (db *DB) InsertUser(ctx context.Context, username string, password string) {
+	_, err := db.Conn.Exec("INSERT INTO users ('username', 'password') VALUES ($1, $2)", username, password)
 	if err != nil {
 		logger.Warn(ctx, "Error returned whilst getting users", slog.Any("error", err))
 	}
+}
+
+func (db *DB) VerifyLogin(ctx context.Context, username *string, password *string) error {
+	rows, err := db.Conn.Query("SELECT password FROM users WHERE username = $1", username)
+	if err != nil {
+		logger.Error(ctx, "Error returned whilst getting users", slog.Any("error", err))
+		return err
+	}
+
+	var hashedPassword []byte
+	for rows.Next() {
+		var password string
+		if err := rows.Scan(&password); err != nil {
+			logger.Error(ctx, "Error scanning password", slog.Any("error", err))
+			return err
+		}
+		hashedPassword = []byte(password)
+	}
+
+	return bcrypt.CompareHashAndPassword(hashedPassword, []byte(*password))
 }

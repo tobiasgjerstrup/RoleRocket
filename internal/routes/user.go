@@ -1,16 +1,70 @@
 package routes
 
 import (
-	"context"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"net/http"
 	sqlite "rolerocket/internal/db"
+	"rolerocket/internal/logger"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
-func GetUsers(ctx context.Context) ([]string, error) {
-	return sqlite.DBInstance.GetUsers(ctx)
+type Credentials struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
-func InsertUser(ctx context.Context) {
-	sqlite.DBInstance.InsertUser(ctx)
+type UserSearch struct {
+	Username string
+}
+
+func GetUsers(w http.ResponseWriter, r *http.Request) ([]string, error) {
+	userSearch := r.URL.Query().Get("username")
+	return sqlite.DBInstance.GetUsers(r.Context(), &userSearch)
+}
+
+func InsertUser(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var creds Credentials
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&creds)
+	if err != nil {
+		http.Error(w, "Invalid or unexpected JSON fields", http.StatusBadRequest)
+		return
+	}
+
+	if creds.Username == "" || creds.Password == "" {
+		http.Error(w, "Missing username or password in JSON body", http.StatusBadRequest)
+		return
+	}
+
+	if len(creds.Username) <= 5 || len(creds.Password) <= 5 {
+		http.Error(w, "Username and password has to be longer than 5 characters", http.StatusBadRequest)
+		return
+	}
+
+	existingUsers, err := sqlite.DBInstance.GetUsers(r.Context(), &creds.Username)
+	if err != nil {
+		logger.Error(r.Context(), "Error thrown whilst getting user", slog.Any("error", err))
+		http.Error(w, "Missing username or password in JSON body", http.StatusInternalServerError)
+		return
+	}
+	if len(existingUsers) != 0 {
+		http.Error(w, "Username already exists!", http.StatusBadRequest)
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), bcrypt.DefaultCost)
+	if err != nil {
+		logger.Error(r.Context(), "Error thrown whilst salting and hashing password", slog.Any("error", err))
+		http.Error(w, "Internal error while securing password", http.StatusInternalServerError)
+		return
+	}
+	sqlite.DBInstance.InsertUser(r.Context(), creds.Username, string(hashedPassword))
 }
 
 func UpdateUser() {
@@ -19,4 +73,27 @@ func UpdateUser() {
 
 func DeleteUser() {
 
+}
+
+func GetToken(w http.ResponseWriter, r *http.Request) {
+	var creds Credentials
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&creds)
+	if err != nil {
+		http.Error(w, "Invalid or unexpected JSON fields", http.StatusBadRequest)
+		return
+	}
+
+	if creds.Username == "" || creds.Password == "" {
+		http.Error(w, "Missing username or password in JSON body", http.StatusBadRequest)
+		return
+	}
+
+	err = sqlite.DBInstance.VerifyLogin(r.Context(), &creds.Username, &creds.Password)
+	if err != nil {
+		http.Error(w, "Username or password is wrong", http.StatusUnauthorized)
+		return
+	}
+	fmt.Println("Authenticated!")
 }
