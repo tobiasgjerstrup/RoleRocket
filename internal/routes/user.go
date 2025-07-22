@@ -2,12 +2,13 @@ package routes
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	sqlite "rolerocket/internal/db"
 	"rolerocket/internal/logger"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -95,5 +96,23 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Username or password is wrong", http.StatusUnauthorized)
 		return
 	}
-	fmt.Println("Authenticated!")
+
+	secretKey := []byte("your-secret-key")
+	claims := jwt.MapClaims{
+		"name": creds.Username,
+		"exp":  time.Now().Add(time.Hour * 1).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	signedToken, err := token.SignedString(secretKey)
+	if err != nil {
+		logger.Error(r.Context(), "Error signing token:", slog.Any("error", err))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"token": signedToken,
+	})
 }
