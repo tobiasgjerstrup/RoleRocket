@@ -1,0 +1,46 @@
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2>Login</h2>
+            <form [formGroup]="form" (ngSubmit)="submit()">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input
+                        type="username"
+                        formControlName="username"
+                        class="form-control"
+                        id="username"
+                        required
+                        [ngClass]="{ 'is-invalid': form.get('username')?.invalid && form.get('username')?.dirty }"
+                    />
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input
+                        type="password"
+                        formControlName="password"
+                        class="form-control"
+                        id="password"
+                        required
+                        [ngClass]="{ 'is-invalid': form.get('password')?.invalid && form.get('password')?.dirty }"
+                    />
+                </div>
+                <div class="mb-3">
+                    <label for="confirmPassword" class="form-label">Retype Password</label>
+                    <input
+                        type="password"
+                        formControlName="confirmPassword"
+                        class="form-control"
+                        id="confirmPassword"
+                        required
+                        [ngClass]="{
+                            'is-invalid': form.get('confirmPassword')?.invalid && form.get('confirmPassword')?.dirty,
+                        }"
+                    />
+                    <div class="invalid-feedback" *ngIf="form.hasError('passwordMismatch') && form.get('confirmPassword')?.touched">Passwords do not match.</div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100" [disabled]="form.invalid">Register</button>
+            </form>
+        </div>
+    </div>
+</div>
