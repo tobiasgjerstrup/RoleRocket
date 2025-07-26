@@ -26,8 +26,13 @@ func Init() *sql.DB {
 		fmt.Println("Error opening DB!", slog.Any("Error", err))
 		log.Fatal(err)
 	}
+	// Enable foreign key constraints
+	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	if err != nil {
+		fmt.Println("Failed to enable foreign keys!", slog.Any("Error", err))
+		log.Fatal(err)
+	}
 
-	// sqlite lite dies a little if multiple are open at the same time
 	db.SetMaxOpenConns(1)
 	DBInstance = &DB{Conn: db}
 	DBInstance.Migrate()
@@ -37,24 +42,71 @@ func Init() *sql.DB {
 func (db *DB) Migrate() {
 	_, err := db.Conn.Exec(`CREATE TABLE IF NOT EXISTS logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-		logTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+		createTime DATETIME DEFAULT CURRENT_TIMESTAMP,
 		correlationId TEXT,
 		level TEXT,
         log TEXT,
 		info TEXT
     )`)
 	if err != nil {
-		fmt.Println("Error creating logs", slog.Any("Error", err))
+		fmt.Println("Error creating logs table", slog.Any("Error", err))
 		log.Fatal(err)
 	}
+
 	_, err = db.Conn.Exec(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 		createTime DATETIME DEFAULT CURRENT_TIMESTAMP,
-        username TEXT,
+        username TEXT UNIQUE,
 		password TEXT
     )`)
 	if err != nil {
-		fmt.Println("Error creating users", slog.Any("Error", err))
+		fmt.Println("Error creating users table", slog.Any("Error", err))
+		log.Fatal(err)
+	}
+
+	_, err = db.Conn.Exec(`CREATE TABLE IF NOT EXISTS roles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		createTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+		name TEXT UNIQUE
+    )`)
+	if err != nil {
+		fmt.Println("Error creating roles table", slog.Any("Error", err))
+		log.Fatal(err)
+	}
+
+	_, err = db.Conn.Exec(`CREATE TABLE IF NOT EXISTS permissions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		createTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+		name TEXT UNIQUE
+    )`)
+	if err != nil {
+		fmt.Println("Error creating permissions table", slog.Any("Error", err))
+		log.Fatal(err)
+	}
+
+	_, err = db.Conn.Exec(`CREATE TABLE IF NOT EXISTS user_roles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		createTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+		user_id_fk INTEGER,
+		role_id_fk INTEGER,
+		FOREIGN KEY (user_id_fk) REFERENCES users(id),
+		FOREIGN KEY (role_id_fk) REFERENCES roles(id)
+    )`)
+	if err != nil {
+		fmt.Println("Error creating user_roles table", slog.Any("Error", err))
+		log.Fatal(err)
+	}
+
+	_, err = db.Conn.Exec(`CREATE TABLE IF NOT EXISTS role_permissions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		createTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+		role_id_fk INTEGER,
+		permission_id_fk INTEGER,
+		FOREIGN KEY (role_id_fk) REFERENCES roles(id),
+		FOREIGN KEY (permission_id_fk) REFERENCES permissions(id)
+    )`)
+	if err != nil {
+		fmt.Println("Error creating role_permissions table", slog.Any("Error", err))
 		log.Fatal(err)
 	}
 }
