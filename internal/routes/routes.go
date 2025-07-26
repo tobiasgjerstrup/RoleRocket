@@ -3,11 +3,30 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	sqlite "rolerocket/internal/db"
+	"strings"
 )
 
 func Routes(debugMode bool) *http.ServeMux {
 	router := http.NewServeMux()
+
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/users") {
+			http.NotFound(w, r)
+			return
+		}
+
+		// Try to serve static files first
+		staticPath := "./static" + r.URL.Path
+		if _, err := os.Stat(staticPath); err == nil {
+			http.ServeFile(w, r, staticPath)
+			return
+		}
+
+		// Fallback to index.html for SPA routes
+		http.ServeFile(w, r, "./static/index.html")
+	})
 
 	router.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
 		users, err := GetUsers(w, r)
