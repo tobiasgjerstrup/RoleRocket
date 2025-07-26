@@ -1,0 +1,22 @@
+{
+  "overrides": [
+    {
+      "files": "*.ts",
+      "options": {
+        "semi": true,
+        "singleQuote": true,
+        "tabWidth": 4,
+        "printWidth": 120
+      }
+    },
+    {
+      "files": "*.html",
+      "options": {
+        "semi": true,
+        "singleQuote": true,
+        "tabWidth": 4,
+        "printWidth": 200
+      }
+    }
+  ]
+}
