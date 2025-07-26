@@ -36,9 +36,6 @@ go.work.sum
 *.sqlite
 *.db
 
-# Git
-!.gitkeep
-
 # System files
 .DS_Store
 Thumbs.db
@@ -57,7 +54,7 @@ Thumbs.db
 /web/tmp
 /web/out-tsc
 /web/bazel-out
-/static
+/static/*
 
 ## Node
 /web/node_modules
@@ -81,3 +78,6 @@ Thumbs.db
 /web/libpeerconnection.log
 /web/testem.log
 /web/typings
+
+# Git
+!.gitkeep
