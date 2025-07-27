@@ -1,5 +1,6 @@
 {
   "watch": ["."],
   "ext": "ts,html,json",
+  "ignore": ["package.json", "package-lock.json"],
   "exec": "npm run build"
 }

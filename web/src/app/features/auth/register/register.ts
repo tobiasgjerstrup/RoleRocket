@@ -10,6 +10,7 @@ import {
     ValidationErrors,
     Validators,
 } from '@angular/forms';
+import { Auth, TokenRaw } from '../../../core/auth';
 
 @Component({
     selector: 'app-register',
@@ -30,6 +31,7 @@ export class Register {
     constructor(
         private fb: FormBuilder,
         private http: HttpClient,
+        private auth: Auth,
     ) {
         this.form = this.fb.group(
             {
@@ -52,12 +54,12 @@ export class Register {
                 })
                 .subscribe(() => {
                     this.http
-                        .post('/users/token', {
+                        .post<TokenRaw>('/users/token', {
                             username: this.form.value.username,
                             password: this.form.value.password,
                         })
-                        .subscribe(() => {
-                            console.log('yaaaas');
+                        .subscribe((res) => {
+                            this.auth.authWithToken(res.token);
                         });
                 });
         }

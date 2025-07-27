@@ -1,13 +1,13 @@
 {
   "name": "role-rocket",
-  "version": "0.0.0",
+  "version": "0.0.148",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "postbuild": "shx mv ../static/browser/* ../static/ && shx touch ../static/.gitkeep"
+    "postbuild": "npx prettier --config ../.prettierrc --write . && npm version patch --no-git-tag-version && shx mv ../static/browser/* ../static/ && shx touch ../static/.gitkeep"
   },
   "prettier": {
     "overrides": [

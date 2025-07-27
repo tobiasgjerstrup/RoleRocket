@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormGroup, FormBuilder, Validators, ReactiveFormsModule, AbstractControlOptions } from '@angular/forms';
+import { Auth, TokenRaw } from '../../../core/auth';
 
 @Component({
     selector: 'app-login',
@@ -15,6 +16,7 @@ export class Login {
     constructor(
         private fb: FormBuilder,
         private http: HttpClient,
+        private auth: Auth,
     ) {
         this.form = this.fb.group({
             username: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
@@ -25,11 +27,13 @@ export class Login {
     public submit() {
         if (this.form.valid) {
             this.http
-                .post('/users/token', {
+                .post<TokenRaw>('/users/token', {
                     username: this.form.value.username,
                     password: this.form.value.password,
                 })
-                .subscribe(() => {});
+                .subscribe((res) => {
+                    this.auth.authWithToken(res.token);
+                });
         }
     }
 }
