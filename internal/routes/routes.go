@@ -49,7 +49,11 @@ func Routes(debugMode bool) *http.ServeMux {
 		w.Write([]byte("Update user with ID: " + id))
 	})
 	router.HandleFunc("POST /users", func(w http.ResponseWriter, r *http.Request) {
-		InsertUser(w, r)
+		err := InsertUser(w, r)
+		if err != nil {
+			return
+		}
+		w.Write([]byte("User created!"))
 	})
 	router.HandleFunc("DELETE /users/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")

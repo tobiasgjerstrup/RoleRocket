@@ -19,8 +19,8 @@ export class Login {
         private auth: Auth,
     ) {
         this.form = this.fb.group({
-            username: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
-            password: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
+            username: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(100)]],
+            password: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(100)]],
         } as AbstractControlOptions);
     }
 
