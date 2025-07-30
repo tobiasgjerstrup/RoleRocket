@@ -17,15 +17,15 @@ func Routes(debugMode bool) *http.ServeMux {
 			return
 		}
 
-		// Try to serve static files first
-		staticPath := "./static" + r.URL.Path
-		if _, err := os.Stat(staticPath); err == nil {
-			http.ServeFile(w, r, staticPath)
+		// Try to serve built files first
+		publicPath := "./public" + r.URL.Path
+		if _, err := os.Stat(publicPath); err == nil {
+			http.ServeFile(w, r, publicPath)
 			return
 		}
 
 		// Fallback to index.html for SPA routes
-		http.ServeFile(w, r, "./static/index.html")
+		http.ServeFile(w, r, "./public/index.html")
 	})
 
 	router.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {

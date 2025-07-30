@@ -54,7 +54,7 @@ Thumbs.db
 /web/tmp
 /web/out-tsc
 /web/bazel-out
-/static/*
+/public/*
 
 ## Node
 /web/node_modules
