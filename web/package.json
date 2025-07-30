@@ -1,6 +1,6 @@
 {
   "name": "role-rocket",
-  "version": "0.0.150",
+  "version": "0.0.178",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
