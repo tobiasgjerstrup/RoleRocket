@@ -13,13 +13,15 @@ func main() {
 	db := sqlite.Init()
 	logger.Main(db)
 
+	corsRouter := routes.WithCORS(router)
+
 	// ? use localhost:xxxx to make it not ask for admin permissions
 	// ? use :8080 for production and benchmarking! This changes how TCP behaves so it's very important to use :8080
 	port := ":8080"
 	logger.Info(context.Background(), "Starting server on port: "+port)
 	server := http.Server{
 		Addr:    port,
-		Handler: logger.Middlware(router),
+		Handler: logger.Middlware(corsRouter),
 	}
 	server.ListenAndServe()
 
