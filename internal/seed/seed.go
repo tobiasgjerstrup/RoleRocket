@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -75,6 +76,10 @@ func Seed(api string) {
 				if err != nil {
 					fmt.Println(err)
 					continue
+				}
+				if res.StatusCode > 299 {
+					bodyBytes, _ := io.ReadAll(res.Body)
+					fmt.Printf("Status: %d\nBody: %s\n", res.StatusCode, string(bodyBytes))
 				}
 				res.Body.Close()
 			}
