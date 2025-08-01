@@ -22,12 +22,12 @@ type UserSearch struct {
 	Username string
 }
 
-func GetUsers(w http.ResponseWriter, r *http.Request) ([]string, error) {
+func getUsers(w http.ResponseWriter, r *http.Request) ([]string, error) {
 	userSearch := r.URL.Query().Get("username")
 	return sqlite.DBInstance.GetUsers(r.Context(), userSearch)
 }
 
-func InsertUser(w http.ResponseWriter, r *http.Request) error {
+func insertUser(w http.ResponseWriter, r *http.Request) error {
 	defer r.Body.Close()
 	var creds Credentials
 
@@ -71,15 +71,7 @@ func InsertUser(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func UpdateUser() {
-
-}
-
-func DeleteUser() {
-
-}
-
-func GetToken(w http.ResponseWriter, r *http.Request) {
+func getToken(w http.ResponseWriter, r *http.Request) {
 	var creds Credentials
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()

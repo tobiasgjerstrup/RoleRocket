@@ -29,7 +29,7 @@ func Routes(debugMode bool) *http.ServeMux {
 	})
 
 	router.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
-		users, err := GetUsers(w, r)
+		users, err := getUsers(w, r)
 		if err != nil {
 			respondWithError(w, "Failed to fetch users", http.StatusInternalServerError)
 			return
@@ -44,13 +44,9 @@ func Routes(debugMode bool) *http.ServeMux {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(jsonBytes)
 	})
-	/* router.HandleFunc("PUT /users/{id}", func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		w.Write([]byte("Update user with ID: " + id))
-	}) */
 	router.HandleFunc("POST /users", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		err := InsertUser(w, r)
+		err := insertUser(w, r)
 		if err != nil {
 			return
 		}
@@ -58,12 +54,20 @@ func Routes(debugMode bool) *http.ServeMux {
 		response := map[string]string{"message": "User created!"}
 		json.NewEncoder(w).Encode(response)
 	})
-	/* router.HandleFunc("DELETE /users/{id}", func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		w.Write([]byte("Delete user with ID: " + id))
-	}) */
 	router.HandleFunc("POST /users/token", func(w http.ResponseWriter, r *http.Request) {
-		GetToken(w, r)
+		getToken(w, r)
+	})
+	router.HandleFunc("GET /permissions", func(w http.ResponseWriter, r *http.Request) {
+		getPermissions(w, r)
+	})
+	router.HandleFunc("POST /permissions", func(w http.ResponseWriter, r *http.Request) {
+		insertPermission(w, r)
+	})
+	router.HandleFunc("GET /roles", func(w http.ResponseWriter, r *http.Request) {
+		getRoles(w, r)
+	})
+	router.HandleFunc("POST /roles", func(w http.ResponseWriter, r *http.Request) {
+		insertRole(w, r)
 	})
 
 	if debugMode {

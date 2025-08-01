@@ -20,6 +20,18 @@ type DB struct {
 
 var DBInstance *DB
 
+type Permission struct {
+	ID         int
+	Name       string
+	CreateTime string
+}
+
+type Role struct {
+	ID         int
+	Name       string
+	CreateTime string
+}
+
 func Init() *sql.DB {
 	db, err := sql.Open("sqlite3", "./db.sqlite")
 	if err != nil {
@@ -76,11 +88,13 @@ func (db *DB) GetUsers(ctx context.Context, search string) ([]string, error) {
 	return usernames, nil
 }
 
-func (db *DB) InsertUser(ctx context.Context, username string, password string) {
+func (db *DB) InsertUser(ctx context.Context, username string, password string) error {
 	_, err := db.Conn.Exec("INSERT INTO users ('username', 'password') VALUES ($1, $2)", username, password)
 	if err != nil {
-		logger.Warn(ctx, "Error returned whilst getting users", slog.Any("error", err))
+		logger.Warn(ctx, "Error returned whilst inserting user", slog.Any("error", err))
+		return err
 	}
+	return nil
 }
 
 func (db *DB) VerifyLogin(ctx context.Context, username *string, password *string) error {
@@ -101,4 +115,98 @@ func (db *DB) VerifyLogin(ctx context.Context, username *string, password *strin
 	}
 
 	return bcrypt.CompareHashAndPassword(hashedPassword, []byte(*password))
+}
+
+func (db *DB) GetPermissions(ctx context.Context, search string) ([]Permission, error) {
+	var rows *sql.Rows
+	var err error
+
+	if search == "" {
+		rows, err = db.Conn.Query("SELECT * FROM permissions")
+	} else if strings.Contains(search, "*") {
+		searchTerm := strings.ReplaceAll(search, "*", "%")
+		rows, err = db.Conn.Query("SELECT * FROM permissions WHERE name LIKE $1", searchTerm)
+	} else {
+		rows, err = db.Conn.Query("SELECT * FROM permissions WHERE name = $1", search)
+	}
+
+	if err != nil {
+		logger.Error(ctx, "Error returned whilst getting permissions", slog.Any("error", err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	var permissions []Permission
+	for rows.Next() {
+		var p Permission
+		if err := rows.Scan(&p.ID, &p.Name, &p.CreateTime); err != nil {
+			logger.Error(ctx, "Error scanning permission", slog.Any("error", err))
+			return nil, err
+		}
+		permissions = append(permissions, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		logger.Error(ctx, "Rows iteration error", slog.Any("error", err))
+		return nil, err
+	}
+
+	return permissions, nil
+}
+
+func (db *DB) InsertPermission(ctx context.Context, name string) error {
+	_, err := db.Conn.Exec("INSERT INTO permissions ('name') VALUES ($1)", name)
+	if err != nil {
+		logger.Warn(ctx, "Error returned whilst inserting permission", slog.Any("error", err))
+		return err
+	}
+
+	return nil
+}
+
+func (db *DB) GetRoles(ctx context.Context, search string) ([]Role, error) {
+	var rows *sql.Rows
+	var err error
+
+	if search == "" {
+		rows, err = db.Conn.Query("SELECT * FROM roles")
+	} else if strings.Contains(search, "*") {
+		searchTerm := strings.ReplaceAll(search, "*", "%")
+		rows, err = db.Conn.Query("SELECT * FROM roles WHERE name LIKE $1", searchTerm)
+	} else {
+		rows, err = db.Conn.Query("SELECT * FROM roles WHERE name = $1", search)
+	}
+
+	if err != nil {
+		logger.Error(ctx, "Error returned whilst getting roles", slog.Any("error", err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	var roles []Role
+	for rows.Next() {
+		var r Role
+		if err := rows.Scan(&r.ID, &r.Name, &r.CreateTime); err != nil {
+			logger.Error(ctx, "Error scanning role", slog.Any("error", err))
+			return nil, err
+		}
+		roles = append(roles, r)
+	}
+
+	if err := rows.Err(); err != nil {
+		logger.Error(ctx, "Rows iteration error", slog.Any("error", err))
+		return nil, err
+	}
+
+	return roles, nil
+}
+
+func (db *DB) InsertRole(ctx context.Context, name string) error {
+	_, err := db.Conn.Exec("INSERT INTO roles ('name') VALUES ($1)", name)
+	if err != nil {
+		logger.Warn(ctx, "Error returned whilst inserting role", slog.Any("error", err))
+		return err
+	}
+
+	return nil
 }
