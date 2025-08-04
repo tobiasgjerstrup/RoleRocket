@@ -1,0 +1,2 @@
+*.scss linguist-language=SCSS
+*.c linguist-language=C
