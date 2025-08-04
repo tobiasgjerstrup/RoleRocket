@@ -3,7 +3,7 @@ package main
 import "rolerocket/internal/benchmark"
 
 func main() {
-	benchmark.RunBenchmark("http://localhost:8080/users", 10000, 5)
+	benchmark.RunBenchmark("http://localhost:8080/users?username=convoke", 10000, 5)
 }
 
 /*

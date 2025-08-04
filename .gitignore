@@ -35,6 +35,8 @@ go.work.sum
 # Program data
 *.sqlite
 *.db
+*.sqlite-shm
+*.sqlite-wal
 
 # System files
 .DS_Store

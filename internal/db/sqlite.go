@@ -45,6 +45,12 @@ func Init() *sql.DB {
 		log.Fatal(err)
 	}
 
+	_, err = db.Exec("PRAGMA journal_mode = WAL")
+	if err != nil {
+		fmt.Println("Failed to enable WAL mode!", slog.Any("Error", err))
+		log.Fatal(err)
+	}
+
 	db.SetMaxOpenConns(1)
 	DBInstance = &DB{Conn: db}
 	DBInstance.Migrate()
