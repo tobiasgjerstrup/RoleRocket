@@ -43,3 +43,40 @@ int* bubbleSort(int* input, int size) {
 
     return sorted;
 }
+
+void quicksort(int* arr, int low, int high) {
+    if (low < high) {
+        // Partition
+        int pivot = arr[high];
+        int i = low - 1;
+        for (int j = low; j < high; j++) {
+            if (arr[j] < pivot) {
+                i++;
+                int temp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = temp;
+            }
+        }
+        int temp = arr[i + 1];
+        arr[i + 1] = arr[high];
+        arr[high] = temp;
+
+        int pi = i + 1;
+        quicksort(arr, low, pi - 1);
+        quicksort(arr, pi + 1, high);
+    }
+}
+
+int* quickSortWrapper(int* input, int size) {
+    int* sorted = malloc(size * sizeof(int));
+    if (!sorted) return NULL;
+
+    // Copy input array
+    for (int i = 0; i < size; i++)
+        sorted[i] = input[i];
+
+    // Sort the copy
+    quicksort(sorted, 0, size - 1);
+
+    return sorted;
+}
