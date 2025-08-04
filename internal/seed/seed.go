@@ -112,7 +112,6 @@ func password() string {
 		}
 	}
 
-	// optional extras for flair
 	if rand.Intn(2) == 1 {
 		b.WriteString(fmt.Sprintf("%d", rand.Intn(100)))
 	}
