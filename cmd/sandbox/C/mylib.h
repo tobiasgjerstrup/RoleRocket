@@ -6,5 +6,6 @@ int return_number();
 int return_another_number();
 const char* return_char();
 const char* return_char_again();
+int* bubbleSort();
 
 #endif

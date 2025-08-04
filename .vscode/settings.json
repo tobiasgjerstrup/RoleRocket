@@ -8,5 +8,10 @@
   },
   "gopls": {
     "build.buildFlags": ["-tags", "cgo"]
+  },
+  "files.associations": {
+    "cstdlib": "c",
+    "xlocinfo": "c",
+    "stdio.h": "c"
   }
 }
