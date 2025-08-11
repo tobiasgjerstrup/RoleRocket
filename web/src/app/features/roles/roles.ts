@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Api } from '../../core/services/api';
+import { Router } from '@angular/router';
 
 type PermissionsT = Array<{ id: number; name: string; createTime: Date }>;
 type RolesT = Array<{ id: number; name: string; createTime: Date; permissions: PermissionsT }>;
@@ -11,11 +12,22 @@ type RolesT = Array<{ id: number; name: string; createTime: Date; permissions: P
     styleUrl: './roles.scss',
 })
 export class Roles {
-    constructor(private api: Api) {}
+    constructor(
+        private api: Api,
+        private router: Router,
+    ) {}
 
-    private roles: RolesT | null = null;
+    public roles: RolesT | null = null;
 
     async ngOnInit() {
         this.roles = await this.api.get<RolesT>('/roles?$embed=permissions');
+    }
+
+    public openCreatePermissionModal() {
+        this.router.navigate([{ outlets: { modal: ['create-permission'] } }]);
+    }
+
+    public openCreateRoleModal() {
+        this.router.navigate([{ outlets: { modal: ['create-role'] } }]);
     }
 }

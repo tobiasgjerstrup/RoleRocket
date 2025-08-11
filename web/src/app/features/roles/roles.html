@@ -1,1 +1,9 @@
-<p>roles works!</p>
+<div class="d-grid gap-2 d-md-block">
+    <button (click)="openCreateRoleModal()" class="btn btn-primary" type="button">Create Role</button>
+    <button (click)="openCreatePermissionModal()" class="btn btn-primary" type="button">Create Permission</button>
+</div>
+
+@for (role of roles; track $index) {
+    {{ role.name }}
+    <br />
+}
