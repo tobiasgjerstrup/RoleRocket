@@ -1,12 +1,16 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
+import { Toasts } from './toasts';
 
 @Injectable({
     providedIn: 'root',
 })
 export class Api {
-    constructor(private http: HttpClient) {}
+    constructor(
+        private http: HttpClient,
+        private toasts: Toasts,
+    ) {}
 
     public async get<T>(url: string): Promise<T> {
         return new Promise<T>((resolve, reject) => {
@@ -15,15 +19,15 @@ export class Api {
                     if (res.status >= 200 && res.status < 300 && res.body !== null) {
                         resolve(res.body);
                     } else {
-                        // this.toastService.show(`Unexpected response: ${res.status}`);
-                        console.log(`Unexpected response: ${res.status}`);
+                        this.toasts.showToast(`Unexpected response: ${res.status}`, 'error');
+                        console.error(`Unexpected response: ${res.status}`);
                         reject(`Response not OK: ${res.status}`);
                     }
                 },
                 error: (err) => {
                     const msg = err?.message || 'Request failed';
-                    console.log(`Error: ${msg}`);
-                    // this.toastService.show(`Error: ${msg}`);
+                    console.error(`Error: ${msg}`);
+                    this.toasts.showToast('Error during GET', `Error: ${msg}`, 'error');
                     reject(err);
                 },
             });
@@ -37,15 +41,15 @@ export class Api {
                     if (res.status >= 200 && res.status < 300 && res.body !== null) {
                         resolve(res.body);
                     } else {
-                        // this.toastService.show(`Unexpected response: ${res.status}`);
-                        console.log(`Unexpected response: ${res.status}`);
+                        this.toasts.showToast(`Unexpected response: ${res.status}`, 'error');
+                        console.error(`Unexpected response: ${res.status}`);
                         reject(`Response not OK: ${res.status}`);
                     }
                 },
                 error: (err) => {
                     const msg = err?.message || 'Request failed';
-                    console.log(`Error: ${msg}`);
-                    // this.toastService.show(`Error: ${msg}`);
+                    console.error(`Error: ${msg}`);
+                    this.toasts.showToast('Error during PUT', `Error: ${msg}`, 'error');
                     reject(err);
                 },
             });
@@ -59,15 +63,15 @@ export class Api {
                     if (res.status >= 200 && res.status < 300 && res.body !== null) {
                         resolve(res.body);
                     } else {
-                        // this.toastService.show(`Unexpected response: ${res.status}`);
-                        console.log(`Unexpected response: ${res.status}`);
+                        this.toasts.showToast(`Unexpected response: ${res.status}`, 'error');
+                        console.error(`Unexpected response: ${res.status}`);
                         reject(`Response not OK: ${res.status}`);
                     }
                 },
                 error: (err) => {
                     const msg = err?.message || 'Request failed';
-                    console.log(`Error: ${msg}`);
-                    // this.toastService.show(`Error: ${msg}`);
+                    console.error(`Error: ${msg}`);
+                    this.toasts.showToast('Error during POST', `Error: ${msg}`, 'error');
                     reject(err);
                 },
             });

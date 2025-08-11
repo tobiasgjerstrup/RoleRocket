@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, computed } from '@angular/core';
+import { Toasts } from '../../services/toasts';
 declare var bootstrap: any;
 
 @Component({
@@ -8,10 +9,10 @@ declare var bootstrap: any;
     styleUrl: './toast.scss',
 })
 export class Toast {
-    ngAfterViewInit() {
-        document.querySelectorAll('.toast').forEach((toastEl) => {
-            const toast = new bootstrap.Toast(toastEl);
-            toast.show();
-        });
+    toasts = computed(() => this.toastService.getToasts());
+
+    constructor(private toastService: Toasts) {}
+    dismiss(id: number) {
+        this.toastService.dismissToast(id);
     }
 }
