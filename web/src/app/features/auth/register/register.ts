@@ -11,6 +11,7 @@ import {
 } from '@angular/forms';
 import { Auth, TokenRaw } from '../../../core/services/auth';
 import { Api } from '../../../core/services/api';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'app-register',
@@ -32,6 +33,7 @@ export class Register {
         private fb: FormBuilder,
         private api: Api,
         private auth: Auth,
+        private router: Router,
     ) {
         this.form = this.fb.group(
             {
@@ -57,6 +59,7 @@ export class Register {
                     password: this.form.value.password,
                 });
                 this.auth.authWithToken(res.token);
+                this.router.navigate(['']);
             } catch (err) {
                 console.error(err);
             }

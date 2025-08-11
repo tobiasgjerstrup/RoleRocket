@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormGroup, FormBuilder, Validators, ReactiveFormsModule, AbstractControlOptions } from '@angular/forms';
 import { Auth, TokenRaw } from '../../../core/services/auth';
 import { Api } from '../../../core/services/api';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'app-login',
@@ -17,6 +18,7 @@ export class Login {
         private fb: FormBuilder,
         private auth: Auth,
         private api: Api,
+        private router: Router,
     ) {
         this.form = this.fb.group({
             username: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(100)]],
@@ -32,6 +34,7 @@ export class Login {
                     password: this.form.value.password,
                 });
                 this.auth.authWithToken(res.token);
+                this.router.navigate(['']);
             } catch (err) {
                 console.error(err);
             }
